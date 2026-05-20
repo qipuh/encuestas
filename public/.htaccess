@@ -18,8 +18,19 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Send Requests To Front Controller...
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-f
+    # /api/* → Laravel (index.php)
+    RewriteCond %{REQUEST_URI} ^/api
     RewriteRule ^ index.php [L]
+
+    # /broadcasting/auth → Laravel
+    RewriteCond %{REQUEST_URI} ^/broadcasting
+    RewriteRule ^ index.php [L]
+
+    # Static files and directories → serve directly
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Everything else → Vue SPA
+    RewriteRule ^ index.html [L]
 </IfModule>
