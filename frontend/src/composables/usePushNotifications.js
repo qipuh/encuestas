@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import api from '@/api'
+import api from '@/api/axios'
 
 const isSupported = 'serviceWorker' in navigator && 'PushManager' in window
 const isSubscribed = ref(false)
