@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy-900: #0a1628;
+  --navy-800: #0f1f3d;
+  --navy-700: #152b52;
+  --brand-green: #2ecc71;
+  --brand-green-dark: #27ae60;
+  --sidebar-width: 240px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Nunito', system-ui, sans-serif;
+  background: #f4f5f9;
+  margin: 0;
+  padding: 0;
+  color: #1a202c;
+}
+
+/* ── Scrollbar custom ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── PrimeVue overrides para tema oscuro del sidebar ── */
+.p-datatable .p-datatable-thead > tr > th {
+  background: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: #f8fafc;
+}
+
+.p-button.p-button-success {
+  background: var(--brand-green);
+  border-color: var(--brand-green);
+}
+.p-button.p-button-success:hover {
+  background: var(--brand-green-dark);
+  border-color: var(--brand-green-dark);
+}
+
+/* ── Tarjetas KPI ── */
+.kpi-card {
+  @apply bg-white rounded-xl p-5 flex items-center justify-between shadow-sm border border-gray-100;
+}
+
+/* ── Metric card con mini-chart ── */
+.metric-card {
+  @apply bg-white rounded-xl p-5 shadow-sm border border-gray-100;
+}
+
+/* ── Sidebar nav link activo ── */
+.nav-link-active {
+  background: rgba(46, 204, 113, 0.15);
+  color: var(--brand-green) !important;
+  border-right: 3px solid var(--brand-green);
+}

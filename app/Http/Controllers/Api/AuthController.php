@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        $user = User::with('rol')->where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Las credenciales son incorrectas.'],
+            ]);
+        }
+
+        if (! $user->habilitado) {
+            throw ValidationException::withMessages([
+                'email' => ['Tu cuenta está deshabilitada.'],
+            ]);
+        }
+
+        $user->update(['ultima_actividad' => now()]);
+
+        $token = $user->createToken('emotix-token')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $this->userResource($user),
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Sesión cerrada']);
+    }
+
+    public function user(Request $request)
+    {
+        return response()->json($this->userResource($request->user()->load('rol', 'fuentes')));
+    }
+
+    private function userResource(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'apellidos' => $user->apellidos,
+            'email' => $user->email,
+            'telefono' => $user->telefono,
+            'dni' => $user->dni,
+            'foto_url' => $user->foto ? asset('storage/'.$user->foto) : null,
+            'habilitado' => $user->habilitado,
+            'ultima_actividad' => $user->ultima_actividad,
+            'rol' => $user->rol ? ['id' => $user->rol->id, 'nombre' => $user->rol->nombre] : null,
+            'fuentes' => $user->fuentes?->map(fn ($f) => ['id' => $f->id, 'nombre' => $f->nombre]),
+        ];
+    }
+}

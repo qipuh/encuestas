@@ -1,0 +1,447 @@
+Objetivo general
+Construir una aplicación web progresiva (PWA) que permita:
+
+A los administradores/supervisores gestionar encuestas, ver reportes, configurar usuarios y alertas.
+
+A los usuarios de fuente (sedes) responder encuestas desde la app móvil o web.
+
+Capturar emociones (positiva, neutral, negativa), comentarios abiertos y dar seguimiento tipo ticketing a los casos.
+
+Mostrar dashboards con KPIs, gráficos y evolución de satisfacción.
+
+Tecnologías exigidas:
+
+Backend: Laravel 12 (PHP 8.3+), MySQL/PostgreSQL, Sanctum (autenticación API), Laravel Echo + Pusher/WebSockets (alertas en tiempo real).
+
+Frontend: Vue 3 (Composition API, <script setup>), Vite, Pinia (estado), Vue Router, PWA plugin (vite-plugin-pwa), Tailwind CSS (opcional).
+
+Comunicación: API RESTful (JSON) o Inertia.js (recomiendo API separada para PWA). Usaremos API con Sanctum para tokens.
+
+Tiempo real: Laravel WebSockets o Pusher para notificaciones de nuevos comentarios/alertas.
+
+Almacenamiento de imágenes: Laravel Storage (local o S3) para fotos en bitácora.
+
+Notificaciones push: Web Push API (con service workers).
+
+Paso 1: Configuración inicial del proyecto
+1.1 Crear proyecto Laravel
+composer create-project laravel/laravel emotix-backend
+cd emotix-backend
+composer require laravel/sanctum laravel/cors laravel/horizon (opcional para colas) pusher/pusher-php-server
+php artisan sanctum:install
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+
+1.2 Configurar base de datos (.env)
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=encuestas
+DB_USERNAME=root
+DB_PASSWORD=
+
+1.3 Configurar CORS (para frontend separado)
+Editar config/cors.php para permitir origen de la app Vue (ej: http://localhost:5173).
+
+1.4 Instalar Laravel WebSockets (alternativa a Pusher)
+bash
+composer require beyondcode/laravel-websockets
+php artisan vendor:publish --provider="BeyondCode\LaravelWebSockets\WebSocketsServiceProvider" --tag="config"
+php artisan migrate
+Configurar .env:
+
+text
+BROADCAST_DRIVER=pusher
+PUSHER_APP_ID=local
+PUSHER_APP_KEY=local
+PUSHER_APP_SECRET=local
+PUSHER_HOST=127.0.0.1
+PUSHER_PORT=6001
+PUSHER_SCHEME=http
+1.5 Crear proyecto Vue 3 con PWA
+bash
+npm create vue@latest emotix-frontend
+cd emotix-frontend
+npm install
+npm install pinia vue-router axios laravel-echo pusher-js @vitejs/plugin-pwa
+Configurar vite.config.js para PWA:
+
+js
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import { VitePWA } from 'vite-plugin-pwa'
+
+export default defineConfig({
+  plugins: [
+    vue(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'Emotix',
+        short_name: 'Emotix',
+        description: 'Experiencias que se sienten',
+        theme_color: '#ffffff',
+        icons: [...]
+      }
+    })
+  ]
+})
+1.6 Conectar frontend con backend (proxy en desarrollo)
+En vite.config.js:
+
+js
+server: {
+  proxy: {
+    '/api': 'http://localhost:8000',
+    '/broadcasting': 'http://localhost:6001'
+  }
+}
+Paso 2: Diseño de la base de datos (tablas clave)
+sql
+-- roles (Administrador, Supervisor, Calidad, Fuente)
+-- permissions (permisos por módulo: dashboard, encuestas, comentarios, reportes, usuarios, configuracion)
+-- role_has_permissions (matriz de permisos)
+-- users (id, name, email, password, role_id, telefono, dni, foto, ultima_actividad, estado)
+-- user_fuentes (pivot: user_id, fuente_id)
+
+-- fuentes (sedes: Procabell Surco, Jesús María, etc.)
+-- categorias (Pacientes, Personal Interno, Proveedores)
+
+-- encuestas (id, nombre, fuente_id, categoria_id, pregunta_principal, preguntas_positiva, neutral, negativa, estado, creado_por)
+-- respuestas_encuesta (id, encuesta_id, usuario_id, emocion, comentario, fecha_hora)
+
+-- comentarios (id, fuente_id, encuesta_id, comentario, emocion, estado (pendiente, en proceso, resuelto), fecha, hora, cliente_nombre, cliente_dni, cliente_telefono)
+-- seguimientos (id, comentario_id, user_id, nota, accion (estado), created_at)
+-- archivos_seguimiento (id, seguimiento_id, ruta_archivo)
+
+-- alertas_config (id, emocion (positiva/neutral/negativa), canal (inmediata), destinatarios_ids)
+-- notificaciones (id, user_id, titulo, mensaje, leida, created_at)
+
+-- reportes (tablas generadas por queries, no necesariamente persistidas)
+Migraciones con relaciones, índices y timestamps.
+
+Paso 3: Backend - API Endpoints
+Usar php artisan make:model y php artisan make:controller para cada recurso.
+
+Autenticación (Sanctum)
+POST /api/login (email/contraseña) → devuelve token y datos usuario.
+
+POST /api/logout
+
+GET /api/user (usuario autenticado con sus fuentes y rol)
+
+Módulo Encuestas
+GET /api/encuestas (listado paginado, filtros por fuente, fecha, categoría)
+
+POST /api/encuestas (crear - solo admin/supervisor)
+
+GET /api/encuestas/{id}
+
+PUT /api/encuestas/{id} (editar)
+
+PATCH /api/encuestas/{id}/toggle-pause (pausar/reanudar)
+
+DELETE /api/encuestas/{id}
+
+GET /api/encuestas/activa-para-fuente (para app móvil: devuelve la encuesta habilitada de la fuente del usuario)
+
+Módulo Respuestas (App)
+POST /api/respuestas-encuesta (guardar respuesta: encuesta_id, emocion, comentario)
+
+Lógica: al guardar se crea automáticamente un Comentario si el comentario no está vacío, con estado "pendiente". Se dispara evento NuevoComentario (broadcast) para alertas.
+
+Módulo Comentarios
+GET /api/comentarios (listado con filtros por fuente, estado, emoción, fechas)
+
+GET /api/comentarios/{id} (detalle con seguimientos)
+
+POST /api/comentarios/{id}/seguimientos (agregar nota)
+
+PATCH /api/comentarios/{id}/estado (cambiar estado: pendiente → en proceso → resuelto)
+
+POST /api/comentarios/{id}/archivos (subir foto adjunta)
+
+GET /api/comentarios/export-excel (descarga)
+
+Módulo Reportes
+GET /api/reportes/dashboard (resumen: encuestas del día, comentarios, satisfacción general, total emociones, evolución)
+
+GET /api/reportes/emociones (distribución porcentual)
+
+GET /api/reportes/satisfaccion-diaria?fuente=fecha_inicio=fecha_fin=
+
+GET /api/reportes/descargar-excel (con filtros)
+
+Módulo Usuarios
+GET /api/usuarios (con roles y fuentes)
+
+POST /api/usuarios (solo admin)
+
+GET /api/usuarios/{id}
+
+PUT /api/usuarios/{id}
+
+DELETE /api/usuarios/{id}
+
+GET /api/roles (lista de roles con sus permisos)
+
+Módulo Configuración
+GET /api/configuracion/general (organización, umbrales, hora cierre sesión)
+
+PUT /api/configuracion/general
+
+GET /api/configuracion/permisos-rol (matriz de permisos)
+
+PUT /api/configuracion/permisos-rol (actualizar)
+
+GET /api/configuracion/alertas
+
+PUT /api/configuracion/alertas
+
+Módulo Mi cuenta
+GET /api/mi-cuenta
+
+PUT /api/mi-cuenta
+
+PUT /api/mi-cuenta/cambiar-password
+
+WebSockets / Eventos
+NuevoComentario (evento broadcast) → enviado a canales privados según destinatarios configurados en alertas.
+
+En el frontend, escuchar y mostrar notificación push (si la PWA está instalada y tiene permiso).
+
+Paso 4: Frontend en Vue 3 (SPA + PWA)
+Estructura de carpetas
+text
+src/
+├── api/          (axios interceptors, endpoints)
+├── layouts/      (MainLayout, AuthLayout)
+├── pages/        (Dashboard, Encuestas, Comentarios, Reportes, Usuarios, Configuracion, MiCuenta, Login)
+├── components/   (reutilizables: tabla, filtros, modal, formularios)
+├── stores/       (Pinia: auth, encuestas, comentarios, app)
+├── router/       (rutas con guards por rol)
+├── plugins/      (pusher, echo)
+├── service-worker.js (personalizado si es necesario)
+├── App.vue
+└── main.js
+Pantallas a implementar (basadas en las imágenes)
+Login (/login)
+Muestra KPI de satisfacción general (se obtiene de endpoint público o caché).
+
+Campos usuario/contraseña, enlace olvido contraseña.
+
+Al iniciar sesión, guarda token y redirige al dashboard según rol.
+
+Dashboard (/dashboard)
+Componentes:
+
+Tarjetas: Encuestas del día, Comentarios del día, Emoción predominante.
+
+Gráfico de participación de emociones (Chart.js o ECharts).
+
+Satisfacción general con tendencia.
+
+Total emociones y total comentarios con comparativa mes anterior.
+
+Últimos comentarios (tabla rápida).
+
+Filtros: fuente (si usuario tiene múltiples), fecha (mes actual por defecto).
+
+Encuestas (CRUD)
+Listado con tabla (ID, nombre, fecha creación, creador, fuente, acciones).
+
+Botón "Crear encuesta" → wizard de 3 pasos:
+
+Información general: nombre, fuente, categoría.
+Pregunta principal (texto, max 120 caracteres).
+Preguntas por emoción: positiva, neutral, negativa (cada una con campo de texto).
+Edición: similar wizard con datos precargados.
+
+Acciones: pausar/reanudar (cambia estado), eliminar.
+
+Comentarios (módulo de seguimiento)
+Listado con columnas: ID, fuente, fecha, hora, comentario, emoción, estado.
+
+Filtros por fuente, estado, emoción, rango de fechas.
+
+Al hacer clic en un comentario → vista detalle:
+
+Información del comentario (fecha, fuente, encuesta asociada, texto).
+
+Datos del cliente (nombre, DNI, teléfono) – si se capturaron en la app.
+
+Bitácora de seguimiento (lista cronológica: fecha, usuario, nota, cambio de estado).
+
+Botón "Agregar nota" (modal con textarea y opción de adjuntar foto).
+
+Botón "Exportar" (imprimir o descargar PDF).
+
+Botón "Regresar".
+
+Además, desde el listado se puede cambiar el estado directamente (dropdown).
+
+Reportes
+Filtro de fecha (rango) y fuente.
+
+Tabla con columnas: Fecha, LogIn (hora de primera actividad, si se implementa), TimeOn (horas de atención), Positiva, Neutral, Negativa, Comentarios, Satisfacción %.
+
+Botón "Exportar a Excel".
+
+Gráficos adicionales: evolución diaria de satisfacción, barras de emociones.
+
+Usuarios
+Listado de usuarios (tarjetas o tabla) con nombre, email, rol, última actividad, estado (en línea/desconectado).
+
+Botón "Crear usuario" → formulario con:
+
+Datos personales (nombre, apellidos, email, teléfono, DNI, foto).
+
+Acceso y permisos: rol (select), fuentes (múltiple select), estado (habilitado/deshabilitado).
+
+Contraseña (y confirmación).
+
+Edición similar.
+
+Eliminar (soft delete).
+
+Configuración (solo para Administrador)
+Tabs:
+
+General: Información de la organización (nombre, país, distrito, teléfono, email responsable), Parámetros generales (cierre sesión automática, hora límite login, umbral TimeOn, umbral bajo satisfacción).
+
+Roles y permisos: Matriz de permisos (filas: módulos, columnas: roles existentes). Checkboxes para marcar/desmarcar. Máximo 6 roles, botón "+ Nuevo Rol".
+
+Alertas: Tabla con emociones (positiva, neutral, negativa), condición (se activa ante emoción X), canal (inmediata), destinatarios (selección múltiple de usuarios).
+
+Botones: Guardar (envía cambios), Regresar.
+
+Mi cuenta
+Mismo formulario de edición de usuario pero con campos solo para el propio usuario:
+
+Perfil: nombre, apellidos, email, teléfono, DNI, foto.
+
+Cambio de contraseña (campos: contraseña actual, nueva, confirmar).
+
+Sección "Acceso y permisos" solo lectura (rol, fuentes asignadas, estado).
+
+Autenticación y autorización
+Uso de localStorage para guardar token.
+
+Interceptor Axios: añade Authorization: Bearer <token>.
+
+En el router, verificar rol del usuario mediante beforeEach consultando el store de auth.
+
+Los permisos a nivel de módulo se validan en backend (Policy) y en frontend (directivas v-if o can).
+
+PWA y modo offline
+Configurar vite-plugin-pwa con estrategia de cache (Network First para API, Cache First para assets).
+
+Service worker precachea las páginas principales (dashboard, login).
+
+Para respuestas offline: mostrar mensaje de "sin conexión" y almacenar respuestas de encuestas en IndexedDB (si se requiere modo offline total). Por simplicidad inicial, se puede requerir conexión para enviar encuestas, pero se puede implementar cola con Workbox.
+
+Notificaciones push
+Al recibir un evento broadcast de NuevoComentario (solo para destinatarios configurados), mostrar notificación del sistema usando Notification API si el usuario ha dado permiso.
+
+En la configuración de alertas, los destinatarios reciben la notificación en tiempo real (incluso si la app está cerrada, gracias al service worker).
+
+Paso 5: Funcionalidades específicas detalladas
+Encuesta en la app móvil (Vue 3)
+Ruta /encuesta-activa (protegida, requiere token).
+
+Obtener encuesta activa para la fuente del usuario (/api/encuestas/activa-para-fuente).
+
+Mostrar pregunta principal con botones de emociones (caritas: feliz, neutral, triste).
+
+Al seleccionar una emoción:
+
+Si es positiva → mostrar pregunta positiva (configurada en encuesta) + campo de texto opcional.
+
+Si neutral → pregunta neutral + texto.
+
+Si negativa → pregunta negativa + texto.
+
+Botón "Enviar" (POST a /api/respuestas-encuesta).
+
+Botón "No gracias" (solo envía emoción sin comentario).
+
+Al enviar, mostrar pantalla de agradecimiento.
+
+Creación de encuestas con lógica de emociones (wizard)
+Paso 1: Nombre, fuente, categoría.
+
+Paso 2: Pregunta principal.
+
+Paso 3: Tres campos de texto (Positiva, Neutral, Negativa) con límite de caracteres.
+
+Al guardar, se almacena en tabla encuestas con estado = activa por defecto.
+
+Seguimiento de comentarios con bitácora
+Cada comentario tiene un estado (pendiente, en proceso, resuelto).
+
+Al agregar una nota, se crea un registro en seguimientos con user_id y nota. Opcionalmente se puede cambiar el estado desde la misma acción.
+
+Subir foto: endpoint que guarda el archivo y lo asocia al seguimiento.
+
+La bitácora se muestra ordenada por created_at descendente.
+
+Reporte de satisfacción con umbrales
+El cálculo de Satisfacción % se basa en: (positivas + neutrales*0.5) / total_respuestas o similar. Se puede configurar.
+
+En el dashboard, mostrar alerta si la satisfacción baja del umbral bajo satisfacción (ej: 60%).
+
+Configuración de roles y permisos dinámica
+La tabla permissions tiene campos: name (ej: ver_dashboard), module (dashboard, encuestas, etc.).
+
+Los roles tienen muchos a muchos con permissions.
+
+En la interfaz de configuración, se leen todos los módulos y permisos existentes, y se muestra matriz editable.
+
+Al guardar, se sincronizan permisos del rol.
+
+Alertas en tiempo real
+En config/alertas.php o tabla alertas_config, guardar qué emociones deben alertar y a qué usuarios (destinatarios).
+
+Cuando se guarda una respuesta de encuesta y el comentario no está vacío, se dispara un evento NuevoComentario con la emoción.
+
+En el evento, se verifica si esa emoción tiene alertas configuradas; si sí, se envía a los destinatarios via broadcast (canal privado App.Models.User.{id}).
+
+El frontend (Vue) escucha con Echo en ese canal y muestra notificación.
+
+Paso 6: Despliegue y puesta en producción
+Backend
+Configurar .env para producción (APP_ENV=production, APP_DEBUG=false, HTTPS).
+
+Usar supervisor para Laravel WebSockets y Horizon (colas).
+
+Configurar Nginx/Apache.
+
+Migrar base de datos: php artisan migrate --force.
+
+Frontend
+Construir con npm run build (genera dist/ con assets y service worker).
+
+Servir los archivos estáticos desde Nginx o CDN.
+
+Configurar el manifest.json y los iconos para que la PWA sea instalable.
+
+Service worker
+Asegurar que vite-plugin-pwa genera el service worker correctamente. Probar con Lighthouse.
+
+Notificaciones push
+Generar claves VAPID y configurar en vite.config.js.
+
+En el frontend, pedir permiso y suscribir al usuario (guardar suscripción en backend para enviar notificaciones push vía web push, si no se usa WebSockets). Para simplificar, se pueden usar solo WebSockets con la app abierta, y para notificaciones push cuando está cerrada, implementar Web Push API.
+
+Paso 7: Documentación adicional y buenas prácticas
+Código: Usar PHPStan, Laravel Pint, ESLint + Prettier.
+
+Pruebas: PHPUnit para backend, Vitest para frontend.
+
+Seguridad: Sanitizar entradas, usar validación de formularios, proteger rutas API con rate limiting.
+
+Rendimiento: Caching de consultas pesadas (Redis), paginación de listados.
+
+Accesibilidad: Etiquetas ARIA, contraste de colores.
+
+Internacionalización: Preparar sistema con Vue I18n para múltiples idiomas (español por defecto).

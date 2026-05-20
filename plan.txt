@@ -1,0 +1,121 @@
+Ya tengo el contenido de promp.txt. Reorganizo el listado en fases secuenciales con tareas más accionables, marcando la primera como "en progreso" para empezar.
+
+Update Todos
+
+FASE 1 — Crear proyecto Laravel 12 e instalar Sanctum, CORS, Pusher/WebSockets
+
+FASE 1 — Configurar .env (DB, broadcast, CORS) y publicar Sanctum
+
+FASE 1 — Instalar y configurar Laravel WebSockets (beyondcode)
+
+FASE 1 — Crear proyecto Vue 3 + Vite + Pinia + Router + vite-plugin-pwa
+
+FASE 1 — Configurar Vite (proxy /api y /broadcasting, manifest PWA, íconos)
+
+FASE 2 — Migraciones: roles, permissions, role_has_permissions
+
+FASE 2 — Migraciones: users + user_fuentes (pivot)
+
+FASE 2 — Migraciones: fuentes (sedes) y categorias
+
+FASE 2 — Migraciones: encuestas y respuestas_encuesta
+
+FASE 2 — Migraciones: comentarios, seguimientos, archivos_seguimiento
+
+FASE 2 — Migraciones: alertas_config y notificaciones
+
+FASE 2 — Seeders (roles base: Admin, Supervisor, Calidad, Fuente + permisos + fuentes demo)
+
+FASE 2 — Models Eloquent con relaciones, casts e índices
+
+FASE 3 — Auth API: POST /login, POST /logout, GET /user (Sanctum)
+
+FASE 3 — Policies y middleware de roles/permisos
+
+FASE 3 — API Encuestas (CRUD + toggle-pause + activa-para-fuente)
+
+FASE 3 — API Respuestas: POST /respuestas-encuesta + creación automática de Comentario
+
+FASE 3 — Evento broadcast NuevoComentario + canales privados a destinatarios
+
+FASE 3 — API Comentarios (listado, detalle, seguimientos, cambio estado, upload archivos, export Excel)
+
+FASE 3 — API Reportes (dashboard, emociones, satisfacción diaria, export Excel)
+
+FASE 3 — API Usuarios + GET /roles (con permisos)
+
+FASE 3 — API Configuración (general, permisos-rol, alertas)
+
+FASE 3 — API Mi Cuenta (perfil + cambiar-password)
+
+FASE 4 — Estructura Vue: api/axios con interceptor Bearer, stores Pinia (auth, encuestas, comentarios, app), router con guards por rol
+
+FASE 4 — Layouts (AuthLayout, MainLayout con menú lateral según rol)
+
+FASE 4 — Página Login (con KPI satisfacción, recuperar contraseña)
+
+FASE 4 — Dashboard (tarjetas KPI, gráfico emociones Chart.js, tendencia, últimos comentarios, filtros)
+
+FASE 4 — Módulo Encuestas (listado + wizard 3 pasos crear/editar + pausar/eliminar)
+
+FASE 4 — Módulo Comentarios (listado con filtros, detalle, bitácora cronológica, modal agregar nota con foto, export PDF)
+
+FASE 4 — Módulo Reportes (filtros fecha/fuente, tabla + gráficos, export Excel)
+
+FASE 4 — Módulo Usuarios (listado + formulario CRUD con rol/fuentes/foto)
+
+FASE 4 — Módulo Configuración (tabs General / Roles y permisos / Alertas) — solo Admin
+
+FASE 4 — Página Mi Cuenta (perfil + cambio contraseña + acceso/permisos solo lectura)
+
+FASE 4 — Página /encuesta-activa (flujo móvil: emociones → pregunta condicional → enviar/no gracias → agradecimiento)
+
+FASE 4 — Componentes reutilizables (DataTable, Filtros, Modal, FormFields, Charts)
+
+FASE 5 — Integrar Laravel Echo + Pusher-js y suscribir a canal privado App.Models.User.{id}
+
+FASE 5 — Notification API: pedir permiso y mostrar notificación del sistema al recibir NuevoComentario
+
+FASE 5 — Web Push API con VAPID + suscripción almacenada en backend (notificaciones con app cerrada)
+
+FASE 5 — Service worker (precache assets/páginas, NetworkFirst /api, CacheFirst assets)
+
+FASE 5 — Cola offline de respuestas con IndexedDB/Workbox (opcional)
+
+FASE 6 — Validación FormRequest + sanitización en todas las APIs
+
+FASE 6 — Rate limiting en rutas API (throttle)
+
+FASE 6 — Caching Redis para reportes/dashboard + paginación de listados
+
+FASE 6 — Cálculo de Satisfacción % y alertas por umbral bajo
+
+FASE 7 — Tests PHPUnit (auth, encuestas, comentarios, policies)
+
+FASE 7 — Tests Vitest (stores, componentes clave, router guards)
+
+FASE 7 — Configurar Laravel Pint, PHPStan, ESLint, Prettier
+
+FASE 7 — Accesibilidad (ARIA, contraste) e i18n con Vue I18n (es por defecto)
+
+FASE 7 — Auditoría PWA con Lighthouse (instalable, offline, performance)
+
+FASE 8 — Configurar Nginx, supervisor (WebSockets + Horizon), HTTPS, .env producción
+
+FASE 8 — Build frontend (npm run build) y desplegar dist + manifest
+
+FASE 8 — php artisan migrate --force + smoke tests en producción
+Listo. Creé 51 tareas organizadas en 8 fases secuenciales:
+
+Fase	Foco	Tareas
+1	Setup inicial Laravel + Vue PWA	5
+2	Base de datos (migraciones, seeders, modelos)	8
+3	Backend API (Auth, Encuestas, Comentarios, Reportes, Usuarios, Config, Broadcast)	10
+4	Frontend Vue (layouts, 9 pantallas, componentes)	12
+5	Tiempo real + PWA (Echo, push, service worker, offline)	5
+6	Seguridad y rendimiento (validación, rate limit, Redis, satisfacción)	4
+7	Calidad (tests, linters, a11y, i18n, Lighthouse)	5
+8	Despliegue producción	3
+La primera tarea (Crear proyecto Laravel 12 e instalar dependencias) ya está marcada como in_progress. Conforme avancemos, iré marcando cada una como completed y activando la siguiente.
+
+¿Arrancamos con la Fase 1 ejecutando el composer create-project, o prefieres ajustar/reordenar algo antes (p. ej. elegir MySQL vs PostgreSQL, decidir si vamos con Pusher cloud o Laravel WebSockets self-hosted)?
