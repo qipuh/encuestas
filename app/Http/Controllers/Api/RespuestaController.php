@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Events\NuevoComentario;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\PushController;
 use App\Http\Requests\StoreRespuestaRequest;
 use App\Jobs\VerificarUmbralSatisfaccion;
 use App\Models\Comentario;
 use App\Models\Encuesta;
 use App\Models\RespuestaEncuesta;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -52,6 +54,18 @@ class RespuestaController extends Controller
 
                 // Verificar umbral de satisfacción en background
                 VerificarUmbralSatisfaccion::dispatch($encuesta->fuente_id)->onQueue('default');
+
+                // Push notification a usuarios habilitados
+                $userIds = User::where('habilitado', true)->pluck('id')->toArray();
+                if ($userIds) {
+                    $fuente = $comentario->fuente?->nombre ?? 'Emotix';
+                    PushController::sendToUsers(
+                        $userIds,
+                        'Nuevo comentario — ' . $fuente,
+                        $comentario->comentario,
+                        '/app/comentarios'
+                    );
+                }
             }
 
             DB::commit();

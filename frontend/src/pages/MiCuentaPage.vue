@@ -81,10 +81,31 @@
         </div>
       </div>
 
-      <!-- Sección 3: Contraseña -->
-      <div class="bg-white rounded-2xl shadow-sm p-6">
+      <!-- Sección 3: Notificaciones Push -->
+      <div v-if="pushSupported" class="bg-white rounded-2xl shadow-sm p-6">
         <div class="flex items-center gap-3 mb-5">
           <div class="w-7 h-7 bg-[#0f1f3d] text-white text-xs font-black rounded-full flex items-center justify-center shrink-0">3</div>
+          <h2 class="font-bold text-[#0f1f3d]">Notificaciones Push</h2>
+        </div>
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-semibold text-gray-700">Recibir notificaciones</p>
+            <p class="text-xs text-gray-500 mt-0.5">Recibe alertas de nuevos comentarios aunque la app esté cerrada</p>
+          </div>
+          <button @click="togglePush" :disabled="pushLoading"
+            class="relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50"
+            :class="pushSubscribed ? 'bg-[#2ecc71]' : 'bg-gray-300'">
+            <span class="absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200"
+              :class="pushSubscribed ? 'left-7' : 'left-1'"></span>
+          </button>
+        </div>
+        <p v-if="pushError" class="text-xs text-red-500 mt-2">{{ pushError }}</p>
+      </div>
+
+      <!-- Sección 4: Contraseña -->
+      <div class="bg-white rounded-2xl shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-7 h-7 bg-[#0f1f3d] text-white text-xs font-black rounded-full flex items-center justify-center shrink-0">4</div>
           <h2 class="font-bold text-[#0f1f3d]">Cambiar contraseña</h2>
         </div>
 
@@ -158,6 +179,24 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api/axios'
+import { usePushNotifications } from '@/composables/usePushNotifications'
+
+const { isSupported: pushSupported, isSubscribed: pushSubscribed, isLoading: pushLoading, subscribe: pushSubscribe, unsubscribe: pushUnsubscribe, syncSubscriptionState } = usePushNotifications()
+const pushError = ref('')
+
+async function togglePush() {
+  pushError.value = ''
+  try {
+    if (pushSubscribed.value) {
+      await pushUnsubscribe()
+    } else {
+      await pushSubscribe()
+      if (!pushSubscribed.value) pushError.value = 'Activa los permisos de notificación en tu navegador.'
+    }
+  } catch {
+    pushError.value = 'Error al cambiar las notificaciones.'
+  }
+}
 
 const auth = useAuthStore()
 const perfil = ref({})
@@ -233,5 +272,8 @@ async function cambiarPassword() {
   }
 }
 
-onMounted(cargar)
+onMounted(async () => {
+  await cargar()
+  await syncSubscriptionState()
+})
 </script>

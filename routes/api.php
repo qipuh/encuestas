@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ConfiguracionController;
 use App\Http\Controllers\Api\MiCuentaController;
 use App\Http\Controllers\Api\FuenteController;
 use App\Http\Controllers\Api\CategoriaController;
+use App\Http\Controllers\Api\PushController;
 
 // ── Broadcasting auth con Bearer token (Sanctum) ─────
 Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
@@ -20,11 +21,16 @@ Route::post('/broadcasting/auth', function (\Illuminate\Http\Request $request) {
 // ── Público ──────────────────────────────────────────
 Route::middleware('throttle:login')->post('/login', [AuthController::class, 'login']);
 Route::get('/reportes/kpi-publico', [ReporteController::class, 'kpiPublico']);
+Route::get('/push/vapid-key', [PushController::class, 'vapidKey']);
 
 // ── Autenticado ───────────────────────────────────────
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+
+    // Push notifications
+    Route::post('/push-subscription', [PushController::class, 'subscribe']);
+    Route::delete('/push-subscription', [PushController::class, 'unsubscribe']);
 
     // Fuentes y categorías (lookups)
     Route::get('/fuentes', [FuenteController::class, 'index']);

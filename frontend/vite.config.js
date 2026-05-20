@@ -14,7 +14,10 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      devOptions: { enabled: true },          // SW activo en desarrollo
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      devOptions: { enabled: true, type: 'module' },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
         name: 'Emotix',
@@ -30,52 +33,9 @@ export default defineConfig({
           { src: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
         ]
       },
-      workbox: {
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api/],
-        cleanupOutdatedCaches: true,
-
-        // Precachear shell de la app
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-
-        runtimeCaching: [
-          // Assets estáticos → Cache First
-          {
-            urlPattern: /\.(js|css|woff2|png|svg|ico)$/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'static-assets',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 }
-            }
-          },
-          // API GETs → NetworkFirst con fallback a caché (10s timeout)
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/') && !url.pathname.includes('/login') && !url.pathname.includes('/logout'),
-            handler: 'NetworkFirst',
-            method: 'GET',
-            options: {
-              cacheName: 'api-get-cache',
-              networkTimeoutSeconds: 8,
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 },
-              cacheableResponse: { statuses: [200] }
-            }
-          },
-          // Ionicons CDN → StaleWhileRevalidate
-          {
-            urlPattern: /unpkg\.com\/ionicons/i,
-            handler: 'StaleWhileRevalidate',
-            options: { cacheName: 'ionicons-cache', expiration: { maxAgeSeconds: 60 * 60 * 24 * 90 } }
-          },
-          // Google Fonts → CacheFirst
-          {
-            urlPattern: /fonts\.googleapis\.com|fonts\.gstatic\.com/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts', expiration: { maxAgeSeconds: 60 * 60 * 24 * 365 } }
-          }
-        ],
-
-
-      }
+      },
     })
   ],
   resolve: {
