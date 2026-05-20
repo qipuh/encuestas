@@ -83,8 +83,8 @@
       </div>
 
       <!-- Tabla -->
-      <div class="overflow-x-auto">
-      <table v-else class="w-full text-sm min-w-[750px]">
+      <div v-else class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[750px]">
         <thead>
           <tr class="border-b border-gray-100">
             <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 w-16">

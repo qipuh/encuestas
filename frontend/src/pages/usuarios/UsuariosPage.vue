@@ -42,8 +42,8 @@
       </div>
 
       <!-- Tabla -->
-      <div class="overflow-x-auto">
-      <table v-else class="w-full text-sm min-w-[700px]">
+      <div v-else class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[700px]">
         <thead class="bg-gray-50 border-b border-gray-100">
           <tr>
             <th class="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
