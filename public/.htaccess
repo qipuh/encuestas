@@ -18,19 +18,21 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # /api/* → Laravel (index.php)
-    RewriteCond %{REQUEST_URI} ^/api
+    # /api/* y /broadcasting/* → Laravel (index.php)
+    RewriteCond %{REQUEST_URI} ^/(api|broadcasting)
     RewriteRule ^ index.php [L]
 
-    # /broadcasting/auth → Laravel
-    RewriteCond %{REQUEST_URI} ^/broadcasting
-    RewriteRule ^ index.php [L]
+    # Directorios de assets estáticos → servir directamente (sin rewrite)
+    RewriteRule ^(icons|assets|storage|img|build)/ - [L]
 
-    # Static files and directories → serve directly
+    # Archivos estáticos conocidos en la raíz
+    RewriteRule ^(favicon\.ico|apple-touch-icon\.png|manifest\.webmanifest|sw\.js|registerSW\.js|robots\.txt)$ - [L]
+
+    # Cualquier otro archivo existente → servir directamente
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Everything else → Vue SPA
+    # Todo lo demás → Vue SPA
     RewriteRule ^ index.html [L]
 </IfModule>
