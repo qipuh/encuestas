@@ -15,20 +15,22 @@
       </p>
     </div>
 
-    <div class="flex gap-6 items-start">
+    <div class="flex flex-col md:flex-row gap-6 items-start">
       <!-- ═══ Columna principal ═══ -->
       <div class="flex-1 min-w-0 space-y-4">
 
         <!-- Sección 1: Información general -->
         <div class="bg-white rounded-2xl shadow-sm p-6">
-          <div class="flex gap-8">
+          <div class="flex flex-col sm:flex-row gap-4 sm:gap-8">
             <!-- Step info -->
-            <div class="w-40 shrink-0 text-center pt-1">
-              <div class="w-10 h-10 rounded-full bg-[#2ecc71] flex items-center justify-center mx-auto mb-2 shadow-sm">
+            <div class="flex items-center gap-3 sm:flex-col sm:items-center sm:w-40 sm:shrink-0 sm:text-center sm:pt-1">
+              <div class="w-10 h-10 rounded-full bg-[#2ecc71] flex items-center justify-center sm:mx-auto sm:mb-2 shadow-sm shrink-0">
                 <span class="text-white font-black text-base">1</span>
               </div>
-              <p class="font-bold text-[#0f1f3d] text-sm">Información general</p>
-              <p class="text-xs text-gray-400 mt-1 leading-relaxed">Define los datos básicos de tu encuesta</p>
+              <div>
+                <p class="font-bold text-[#0f1f3d] text-sm">Información general</p>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed hidden sm:block">Define los datos básicos de tu encuesta</p>
+              </div>
             </div>
             <!-- Contenido -->
             <div class="flex-1 space-y-4">
@@ -39,7 +41,7 @@
                   class="w-full px-4 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#2ecc71] shadow-sm" />
               </div>
 
-              <div class="flex gap-3 items-end">
+              <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
                 <!-- Fuente dropdown -->
                 <div class="flex-1">
                   <label class="block text-sm font-semibold text-gray-700 mb-1.5">Fuente</label>
@@ -98,7 +100,7 @@
                 </div>
 
                 <!-- Botón + nueva categoría -->
-                <div class="shrink-0 pb-0.5">
+                <div class="sm:shrink-0 sm:pb-0.5">
                   <button @click="addCatVisible = !addCatVisible"
                     class="w-9 h-9 rounded-xl bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center shadow-sm transition-colors">
                     <ion-icon name="add-outline" style="font-size:20px" />
@@ -107,7 +109,7 @@
               </div>
 
               <!-- Mini form nueva categoría -->
-              <div v-if="addCatVisible" class="flex gap-2 items-center">
+              <div v-if="addCatVisible" class="flex flex-wrap gap-2 items-center">
                 <input v-model="nuevaCategoria" type="text" placeholder="Nombre de la nueva categoría..."
                   class="flex-1 px-3 py-2 text-sm bg-white border border-blue-300 rounded-xl focus:outline-none focus:border-blue-500 shadow-sm"
                   @keyup.enter="crearCategoria" />
@@ -126,14 +128,16 @@
 
         <!-- Sección 2: Pregunta principal -->
         <div class="bg-white rounded-2xl shadow-sm p-6">
-          <div class="flex gap-8">
+          <div class="flex flex-col sm:flex-row gap-4 sm:gap-8">
             <!-- Step info -->
-            <div class="w-40 shrink-0 text-center pt-1">
-              <div class="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center mx-auto mb-2 shadow-sm">
+            <div class="flex items-center gap-3 sm:flex-col sm:items-center sm:w-40 sm:shrink-0 sm:text-center sm:pt-1">
+              <div class="w-10 h-10 rounded-full bg-orange-400 flex items-center justify-center sm:mx-auto sm:mb-2 shadow-sm shrink-0">
                 <span class="text-white font-black text-base">2</span>
               </div>
-              <p class="font-bold text-[#0f1f3d] text-sm">Pregunta principal</p>
-              <p class="text-xs text-gray-400 mt-1 leading-relaxed">Es la primera pregunta que verá tu cliente</p>
+              <div>
+                <p class="font-bold text-[#0f1f3d] text-sm">Pregunta principal</p>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed hidden sm:block">Es la primera pregunta que verá tu cliente</p>
+              </div>
             </div>
             <!-- Contenido -->
             <div class="flex-1 space-y-3">
@@ -162,14 +166,16 @@
 
         <!-- Sección 3: Pregunta según la emoción -->
         <div class="bg-white rounded-2xl shadow-sm p-6">
-          <div class="flex gap-8">
+          <div class="flex flex-col sm:flex-row gap-4 sm:gap-8">
             <!-- Step info -->
-            <div class="w-40 shrink-0 text-center pt-1">
-              <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center mx-auto mb-2 shadow-sm">
+            <div class="flex items-center gap-3 sm:flex-col sm:items-center sm:w-40 sm:shrink-0 sm:text-center sm:pt-1">
+              <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center sm:mx-auto sm:mb-2 shadow-sm shrink-0">
                 <span class="text-white font-black text-base">3</span>
               </div>
-              <p class="font-bold text-[#0f1f3d] text-sm">Pregunta según la emoción</p>
-              <p class="text-xs text-gray-400 mt-1 leading-relaxed">Personaliza las preguntas que verán tus clientes según su emoción.</p>
+              <div>
+                <p class="font-bold text-[#0f1f3d] text-sm">Pregunta según la emoción</p>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed hidden sm:block">Personaliza las preguntas que verán tus clientes según su emoción.</p>
+              </div>
             </div>
             <!-- Contenido -->
             <div class="flex-1 divide-y divide-gray-50">
@@ -253,7 +259,7 @@
       </div>
 
       <!-- ═══ Sidebar ═══ -->
-      <div class="w-56 shrink-0 sticky top-6 space-y-2">
+      <div class="w-full md:w-56 shrink-0 md:sticky top-6 space-y-2">
         <!-- Guardar / Crear -->
         <button @click="guardar" :disabled="guardando || !form.nombre || !form.fuente_id || !form.pregunta_principal"
           class="w-full py-3 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2 shadow-sm"
