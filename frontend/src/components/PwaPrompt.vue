@@ -1,10 +1,9 @@
 <template>
-  <!-- ── Baner de instalación ── -->
+  <!-- ── Baner de instalación (no en login: ahí lo muestra LoginPage) ── -->
   <Transition name="pwa-slide">
     <div v-if="showBanner" class="fixed bottom-0 inset-x-0 z-[200] px-3 pb-5 pointer-events-none">
       <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 pointer-events-auto max-w-sm mx-auto overflow-hidden">
 
-        <!-- Cabecera verde -->
         <div class="bg-[#0f1f3d] px-4 py-3 flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-[#2ecc71]/20 flex items-center justify-center shrink-0">
             <ion-icon name="happy-outline" style="font-size:20px;color:#2ecc71" />
@@ -18,17 +17,16 @@
           </button>
         </div>
 
-        <!-- Cuerpo -->
         <div class="px-4 py-3 flex items-center gap-3">
           <div class="flex-1 text-xs text-gray-500">
             Funciona sin conexión, recibe notificaciones y carga al instante.
           </div>
-          <button v-if="canInstallAndroid" @click="installAndroid"
+          <button v-if="canInstall" @click="doInstall"
             class="px-4 py-2 bg-[#2ecc71] text-white text-xs font-bold rounded-xl shrink-0 hover:bg-[#27ae60] transition-colors flex items-center gap-1.5">
             <ion-icon name="download-outline" style="font-size:14px" />
             Instalar
           </button>
-          <button v-else-if="isIos" @click="showIosModal = true"
+          <button v-else-if="isIos" @click="showIosHelp = true"
             class="px-4 py-2 bg-[#0f1f3d] text-white text-xs font-bold rounded-xl shrink-0 flex items-center gap-1.5">
             <ion-icon name="information-circle-outline" style="font-size:14px" />
             Cómo instalar
@@ -51,7 +49,7 @@
           class="px-3 py-1.5 bg-[#2ecc71] text-white text-xs font-bold rounded-xl shrink-0 hover:bg-[#27ae60] transition-colors">
           Actualizar
         </button>
-        <button @click="closeRefresh"
+        <button @click="needRefresh = false"
           class="p-1 text-gray-500 hover:text-gray-300 shrink-0 transition-colors">
           <ion-icon name="close-outline" style="font-size:18px" />
         </button>
@@ -59,15 +57,15 @@
     </div>
   </Transition>
 
-  <!-- ── Modal iOS ── -->
+  <!-- ── Modal iOS (global: lo puede abrir el login o el baner) ── -->
   <Transition name="fade">
-    <div v-if="showIosModal" class="fixed inset-0 z-[300] flex items-end justify-center">
-      <div class="absolute inset-0 bg-black/50" @click="showIosModal = false" />
+    <div v-if="showIosHelp" class="fixed inset-0 z-[300] flex items-end justify-center">
+      <div class="absolute inset-0 bg-black/50" @click="showIosHelp = false" />
       <div class="relative bg-white rounded-t-3xl w-full max-w-md px-7 pt-7 pb-10 shadow-2xl">
 
         <div class="flex items-center justify-between mb-1">
           <h3 class="font-black text-[#0f1f3d] text-xl">Instalar Emotix</h3>
-          <button @click="showIosModal = false"
+          <button @click="showIosHelp = false"
             class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100">
             <ion-icon name="close-outline" style="font-size:16px;color:#6b7280" />
           </button>
@@ -119,7 +117,7 @@
           </p>
         </div>
 
-        <button @click="showIosModal = false; dismiss()"
+        <button @click="showIosHelp = false; dismiss()"
           class="w-full mt-5 py-3.5 bg-[#0f1f3d] text-white font-bold rounded-2xl text-sm">
           Entendido
         </button>
@@ -129,56 +127,46 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useRegisterSW } from 'virtual:pwa-register/vue'
+import { usePwaInstall } from '@/composables/usePwaInstall'
+
+const route = useRoute()
+const { isIos, installed, canInstall, showIosHelp } = usePwaInstall()
 
 const { needRefresh, updateServiceWorker } = useRegisterSW({
   onRegistered(r) { r && setInterval(() => r.update(), 60 * 60 * 1000) },
 })
 
-function closeRefresh() { needRefresh.value = false }
+// ── Baner de instalación ────────────────────────────────
+const dismissed = ref(!!localStorage.getItem('pwa_dismissed'))
+const ready     = ref(false)
 
-// ── Install prompt ──────────────────────────────
-const showBanner        = ref(false)
-const showIosModal      = ref(false)
-const canInstallAndroid = ref(false)
-let deferredPrompt      = null
+// No mostrar en el login: LoginPage tiene su propio aviso
+const onLogin = computed(() => route.path === '/' || route.path === '/login')
 
-const ua = navigator.userAgent.toLowerCase()
-const isIos = /iphone|ipad|ipod/.test(ua) && !window.MSStream
-const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone
+const showBanner = computed(() =>
+  ready.value &&
+  !onLogin.value &&
+  !installed.value &&
+  !dismissed.value &&
+  (canInstall.value || isIos)
+)
 
 function dismiss() {
-  showBanner.value = false
+  dismissed.value = true
   localStorage.setItem('pwa_dismissed', '1')
 }
 
-async function installAndroid() {
-  if (!deferredPrompt) return
-  deferredPrompt.prompt()
-  const { outcome } = await deferredPrompt.userChoice
-  if (outcome === 'accepted') dismiss()
-  deferredPrompt = null
-  canInstallAndroid.value = false
-}
-
-function onBeforeInstallPrompt(e) {
-  e.preventDefault()
-  deferredPrompt = e
-  canInstallAndroid.value = true
-  if (!localStorage.getItem('pwa_dismissed')) {
-    setTimeout(() => { showBanner.value = true }, 3000)
-  }
+async function doInstall() {
+  const { promptInstall } = usePwaInstall()
+  const ok = await promptInstall()
+  if (ok) dismiss()
 }
 
 onMounted(() => {
-  if (isInStandalone || localStorage.getItem('pwa_dismissed')) return
-  window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
-  if (isIos) setTimeout(() => { showBanner.value = true }, 3000)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
+  setTimeout(() => { ready.value = true }, 2500)
 })
 </script>
 

@@ -23,10 +23,10 @@
     RewriteRule ^ index.php [L]
 
     # Directorios de assets estáticos → servir directamente (sin rewrite)
-    RewriteRule ^(icons|assets|storage|img|build)/ - [L]
+    RewriteRule ^(assets|storage|img|build)/ - [L]
 
-    # Archivos estáticos conocidos en la raíz
-    RewriteRule ^(favicon\.ico|apple-touch-icon\.png|manifest\.webmanifest|sw\.js|registerSW\.js|robots\.txt)$ - [L]
+    # Archivos estáticos en la raíz → servir directamente
+    RewriteRule \.(png|jpg|jpeg|gif|svg|ico|webmanifest|js|css|woff2?|txt|webp|map)$ - [L]
 
     # Cualquier otro archivo existente → servir directamente
     RewriteCond %{REQUEST_FILENAME} -f [OR]

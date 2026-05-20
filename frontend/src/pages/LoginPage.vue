@@ -1,6 +1,35 @@
 <template>
 
   <!-- ══════════════════════════════════════════════════════
+       AVISO INSTALAR PWA  — fijo arriba, escritorio y móvil
+  ══════════════════════════════════════════════════════ -->
+  <Transition name="pwa-down">
+    <div v-if="showInstall" class="fixed top-0 inset-x-0 z-[150] px-3 pt-3 pointer-events-none">
+      <div class="bg-[#0f1f3d] rounded-2xl shadow-xl border border-white/10 pointer-events-auto max-w-md mx-auto flex items-center gap-3 px-4 py-3">
+        <div class="w-10 h-10 rounded-xl bg-[#2ecc71]/20 flex items-center justify-center shrink-0">
+          <ion-icon name="phone-portrait-outline" style="font-size:20px;color:#2ecc71" />
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-white text-sm font-bold leading-tight">Instala la app Emotix</p>
+          <p class="text-gray-400 text-xs mt-0.5">Acceso rápido, sin conexión y notificaciones</p>
+        </div>
+        <button v-if="canInstall" @click="installApp"
+          class="px-3.5 py-2 bg-[#2ecc71] text-white text-xs font-bold rounded-xl shrink-0 hover:bg-[#27ae60] transition-colors flex items-center gap-1">
+          <ion-icon name="download-outline" style="font-size:13px" />
+          Instalar
+        </button>
+        <button v-else-if="isIos" @click="showIosHelp = true"
+          class="px-3.5 py-2 bg-white/10 text-white text-xs font-bold rounded-xl shrink-0 hover:bg-white/15 transition-colors">
+          Cómo instalar
+        </button>
+        <button @click="dismissInstall" class="p-1 text-gray-500 hover:text-gray-300 shrink-0 transition-colors">
+          <ion-icon name="close-outline" style="font-size:18px" />
+        </button>
+      </div>
+    </div>
+  </Transition>
+
+  <!-- ══════════════════════════════════════════════════════
        DESKTOP (lg+)  — sin cambios
   ══════════════════════════════════════════════════════ -->
   <div class="hidden lg:flex h-screen overflow-hidden">
@@ -192,9 +221,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { usePwaInstall } from '@/composables/usePwaInstall'
 
 const router = useRouter()
 const auth   = useAuthStore()
@@ -204,6 +234,24 @@ const showPassword = ref(false)
 const loading      = ref(false)
 const error        = ref('')
 const showForm     = ref(false)
+
+// ── Instalación PWA ──────────────────────────────────
+const { isIos, installed, canInstall, showIosHelp, promptInstall } = usePwaInstall()
+const installDismissed = ref(!!localStorage.getItem('pwa_dismissed'))
+
+const showInstall = computed(() =>
+  !installed.value && !installDismissed.value && (canInstall.value || isIos)
+)
+
+function dismissInstall() {
+  installDismissed.value = true
+  localStorage.setItem('pwa_dismissed', '1')
+}
+
+async function installApp() {
+  const ok = await promptInstall()
+  if (ok) dismissInstall()
+}
 
 async function handleLogin() {
   error.value   = ''
@@ -238,6 +286,17 @@ async function handleLogin() {
 }
 .fade-btn-enter-from,
 .fade-btn-leave-to {
+  opacity: 0;
+}
+
+/* Aviso instalar PWA: baja desde arriba */
+.pwa-down-enter-active,
+.pwa-down-leave-active {
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
+}
+.pwa-down-enter-from,
+.pwa-down-leave-to {
+  transform: translateY(-130%);
   opacity: 0;
 }
 </style>

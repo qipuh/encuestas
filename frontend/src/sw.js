@@ -72,8 +72,8 @@ self.addEventListener('push', event => {
   const title   = data.title || 'Emotix'
   const options = {
     body:    data.body  || 'Tienes un nuevo comentario',
-    icon:    '/icons/icon-192x192.png',
-    badge:   '/icons/icon-192x192.png',
+    icon:    '/icon-192x192.png',
+    badge:   '/icon-192x192.png',
     vibrate: [200, 100, 200],
     tag:     data.tag   || 'emotix-notification',
     renotify: true,
